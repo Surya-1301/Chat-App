@@ -6,6 +6,7 @@ import { User, NavigationProps, ApiResponse } from '../types';
 export default function Users({ navigation, route }: NavigationProps) {
   const { token, user } = route.params;
   const [users, setUsers] = useState<User[]>([]);
+  const [lastMap, setLastMap] = useState<Record<string, { content: string; createdAt: string }>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +22,17 @@ export default function Users({ navigation, route }: NavigationProps) {
         headers: { Authorization: 'Bearer ' + token } 
       });
       setUsers(data.users || []);
+      // fetch last messages
+      try {
+        const last = await api.get('/conversations/last/messages', {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        const map: Record<string, { content: string; createdAt: string }> = {};
+        (last.data.items || []).forEach((it: any) => {
+          if (it.lastMessage) map[it.otherUserId] = { content: it.lastMessage.content, createdAt: it.lastMessage.createdAt };
+        });
+        setLastMap(map);
+      } catch {}
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || 'Failed to load users';
       setError(errorMessage);
@@ -62,6 +74,11 @@ export default function Users({ navigation, route }: NavigationProps) {
           >
             <Text style={styles.userName}>{item.name}</Text>
             <Text style={styles.userEmail}>{item.email}</Text>
+            {lastMap[item._id] && (
+              <Text style={styles.lastMsg} numberOfLines={1}>
+                {lastMap[item._id].content}
+              </Text>
+            )}
           </TouchableOpacity>
         )}
         refreshing={loading}
@@ -123,5 +140,10 @@ const styles = StyleSheet.create({
   userEmail: {
     color: '#666',
     fontSize: 14
+  },
+  lastMsg: {
+    color: '#444',
+    fontSize: 13,
+    marginTop: 4
   }
 });
