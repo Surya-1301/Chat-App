@@ -2,6 +2,27 @@ const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const mongoose = require('mongoose');
 
+async function listLastMessages(req, res) {
+	try {
+		const myId = req.userId.toString();
+		const conversations = await Conversation.find({ participants: myId })
+			.select('participants lastMessage')
+			.lean();
+
+		const items = conversations.map((c) => {
+			const otherId = c.participants.find((p) => p.toString() !== myId);
+			return {
+				otherUserId: otherId,
+				lastMessage: c.lastMessage || null,
+			};
+		});
+
+		return res.json({ items });
+	} catch (err) {
+		return res.status(500).json({ message: 'Server error' });
+	}
+}
+
 async function getMessages(req, res) {
 	try {
 		const otherUserId = req.params.id;
@@ -28,4 +49,4 @@ async function getMessages(req, res) {
 	}
 }
 
-module.exports = { getMessages };
+module.exports = { getMessages, listLastMessages };
