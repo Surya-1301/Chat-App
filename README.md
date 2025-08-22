@@ -62,6 +62,19 @@ EXPO_PUBLIC_API_URL=http://localhost:4000
 EXPO_PUBLIC_SOCKET_URL=http://localhost:4000
 ```
 
+## Sample Users
+
+These demo accounts are pre-seeded by `npm run seed` (server):
+
+- Alice — email: `alice@example.com`, password: `password123`
+- Bob — email: `bob@example.com`, password: `password123`
+- Charlie — email: `charlie@example.com`, password: `password123`
+
+Tips:
+- Expo Web: open `http://localhost:19006` and ensure API is `http://localhost:4000`.
+- Android Emulator: set API to `http://10.0.2.2:4000`.
+- Real device on LAN: set API to your Mac’s IP, e.g. `http://192.168.1.x:4000`.
+
 ## Installation & Setup
 
 ### 1. Clone the repository
