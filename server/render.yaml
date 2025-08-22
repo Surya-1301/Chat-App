@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: chat-app-server
+    env: docker
+    plan: free
+    dockerCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGINS
+        value: "*"
