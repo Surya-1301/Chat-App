@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
 import { io } from 'socket.io-client';
@@ -15,8 +15,27 @@ export default function Chat({ route }: NavigationProps) {
   const [otherTyping, setOtherTyping] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const socketRef = useRef<any>();
-  const typingTimeout = useRef<any>();
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [lastSeen, setLastSeen] = useState<string>('');
+  const socketRef = useRef<any>(null);
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const typingAnimation = useMemo(() => new Animated.Value(0), []);
+
+  // Animate typing indicator
+  useEffect(() => {
+    if (otherTyping) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(typingAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(typingAnimation, { toValue: 0, duration: 500, useNativeDriver: true })
+        ])
+      );
+      animation.start();
+      return () => animation.stop();
+    } else {
+      typingAnimation.setValue(0);
+    }
+  }, [otherTyping, typingAnimation]);
 
   async function loadHistory() {
     try {
@@ -63,6 +82,7 @@ export default function Chat({ route }: NavigationProps) {
       Alert.alert('Connection Error', 'Failed to connect to chat server');
     });
 
+    // Real-time message updates
     s.on('message:new', ({ message }: { message: Message }) => {
       if ((message.from === me._id && message.to === other._id) || (message.from === other._id && message.to === me._id)) {
         setMessages((prev) => [...prev, message]);
@@ -73,8 +93,8 @@ export default function Chat({ route }: NavigationProps) {
       }
     });
 
+    // Message read receipts
     s.on('message:read', ({ by }: { by: string }) => {
-      // Recipient read my messages
       if (by === other._id) {
         setMessages((prev) => prev.map((m) => {
           if (m.from === me._id && m.to === other._id && !m.readAt) {
@@ -85,11 +105,29 @@ export default function Chat({ route }: NavigationProps) {
       }
     });
 
+    // Typing indicators
     s.on('typing:start', ({ from }: { from: string }) => { 
       if (from === other._id) setOtherTyping(true); 
     });
     s.on('typing:stop', ({ from }: { from: string }) => { 
       if (from === other._id) setOtherTyping(false); 
+    });
+
+    // User online/offline status
+    s.on('user:status', ({ userId, status }: { userId: string, status: string }) => {
+      if (userId === other._id) {
+        setOtherOnline(status === 'online');
+        if (status === 'offline') {
+          // Get last seen time
+          api.get(`/users/${other._id}`, { headers: { Authorization: 'Bearer ' + token } })
+            .then(({ data }) => {
+              if (data.user?.lastSeen) {
+                setLastSeen(new Date(data.user.lastSeen).toLocaleString());
+              }
+            })
+            .catch(() => {});
+        }
+      }
     });
 
     return () => { 
@@ -134,7 +172,23 @@ export default function Chat({ route }: NavigationProps) {
     const ticks = read ? '✓✓' : delivered ? '✓✓' : '✓';
     const color = read ? '#34B7F1' : '#666';
     return (
-      <Text style={[styles.statusText, { color }]}>{ticks}</Text>
+      <Text style={[styles.messageStatusText, { color }]}>{ticks}</Text>
+    );
+  }
+
+  function renderHeader() {
+    return (
+      <View style={styles.header}>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{other.name}</Text>
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusDot, { backgroundColor: otherOnline ? '#4CAF50' : '#9E9E9E' }]} />
+            <Text style={styles.userStatusText}>
+              {otherOnline ? 'Online' : lastSeen ? `Last seen ${lastSeen}` : 'Offline'}
+            </Text>
+          </View>
+        </View>
+      </View>
     );
   }
 
@@ -149,6 +203,8 @@ export default function Chat({ route }: NavigationProps) {
 
   return (
     <View style={styles.container}>
+      {renderHeader()}
+      
       <FlatList
         style={styles.messageList}
         data={messages}
@@ -168,7 +224,12 @@ export default function Chat({ route }: NavigationProps) {
       />
       
       {otherTyping && (
-        <Text style={styles.typingText}>{other.name} is typing...</Text>
+        <View style={styles.typingContainer}>
+          <Text style={styles.typingText}>{other.name} is typing</Text>
+          <Animated.View style={[styles.typingDots, { opacity: typingAnimation }]}>
+            <Text style={styles.typingDotsText}>...</Text>
+          </Animated.View>
+        </View>
       )}
       
       <View style={styles.inputContainer}>
@@ -225,7 +286,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20
   },
-  statusText: {
+  messageStatusText: {
     fontSize: 10,
     marginTop: 4,
     alignSelf: 'flex-end'
@@ -262,5 +323,52 @@ const styles = StyleSheet.create({
   sendText: {
     color: '#fff',
     fontWeight: '700'
+  },
+  header: {
+    padding: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0'
+  },
+  userInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 5
+  },
+  userStatusText: {
+    fontSize: 12,
+    color: '#666'
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginBottom: 8
+  },
+
+  typingDots: {
+    transform: [{ scale: 0.8 }],
+    opacity: 0.7
+  },
+  typingDotsText: {
+    fontSize: 18,
+    fontWeight: 'bold'
   }
 });
