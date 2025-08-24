@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { api } from '../api/client';
 import { storage } from '../utils/storage';
 import { AuthResponse, NavigationProps } from '../types';
+import PrimaryButton from '../components/PrimaryButton';
+import { theme } from '../theme';
 
 export default function Auth({ navigation }: NavigationProps) {
   const [isLogin, setIsLogin] = useState(true);
@@ -71,16 +73,19 @@ export default function Auth({ navigation }: NavigationProps) {
         style={styles.input}
       />
       
-      <Button 
+      <PrimaryButton 
         title={loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')} 
         onPress={submit}
         disabled={loading}
+        loading={loading}
+        style={{ marginTop: theme.spacing(1) }}
       />
       
-      <Button 
+      <PrimaryButton 
         title={isLogin ? 'Need an account? Register' : 'Have an account? Login'} 
         onPress={() => setIsLogin(!isLogin)}
         disabled={loading}
+        style={{ backgroundColor: theme.colors.primaryDark, marginTop: theme.spacing(1) }}
       />
       
       {loading && (
@@ -94,23 +99,24 @@ export default function Auth({ navigation }: NavigationProps) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    gap: 12,
     flex: 1,
-    justifyContent: 'center'
+    justifyContent: 'center',
+    padding: theme.spacing(2),
+    backgroundColor: theme.colors.background,
+    gap: theme.spacing(1.5),
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...theme.text.title,
     textAlign: 'center',
-    marginBottom: 20
+    marginBottom: theme.spacing(2),
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 16
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing(1.5),
+    borderRadius: theme.radius.lg,
+    fontSize: 16,
   },
   loadingContainer: {
     position: 'absolute',

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import PrimaryButton from '../components/PrimaryButton';
+import { theme } from '../theme';
 import { io } from 'socket.io-client';
 import { api } from '../api/client';
 import { config } from '../config/env';
@@ -178,11 +180,9 @@ export default function Chat({ route }: NavigationProps) {
           multiline
           maxLength={1000}
         />
-        <Button 
-          title={sending ? 'Sending...' : 'Send'} 
-          onPress={send}
-          disabled={sending || !text.trim()}
-        />
+        <TouchableOpacity onPress={send} disabled={sending || !text.trim()} style={[styles.sendBtn, (sending || !text.trim()) && { opacity: 0.5 }]}>
+          <Text style={styles.sendText}>{sending ? '...' : 'Send'}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -251,5 +251,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     fontSize: 16,
     maxHeight: 100
+  },
+  sendBtn: {
+    backgroundColor: theme.colors.primary,
+    alignSelf: 'flex-end',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  sendText: {
+    color: '#fff',
+    fontWeight: '700'
   }
 });
