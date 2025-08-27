@@ -1,25 +1,46 @@
 {
-  "name": "server",
+  "name": "chat-app-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "description": "Backend API server for Chat App (Express + Socket.IO)",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.js",
-    "start": "NODE_ENV=production node src/index.js",
+    "start": "NODE_ENV=production node dist/index.js",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && mkdir -p dist && cp -R src/* dist/",
+    "prestart": "npm run build",
     "cleanup": "node scripts/cleanup.js",
     "cleanup-chat": "node scripts/cleanup-chat-only.js",
     "test-auth": "node scripts/test-auth.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/chat-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/chat-app/issues"
+  },
+  "author": "Your Name <you@example.com>",
+  "license": "MIT",
+  "keywords": [
+    "chat",
+    "express",
+    "socket.io",
+    "node",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=18 <25"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "google-auth-library": "^10.3.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.2",
     "morgan": "^1.10.1",

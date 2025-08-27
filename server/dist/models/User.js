@@ -1,32 +1,65 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-const UserSchema = new Schema({
-  name: { 
-    type: String, 
-    required: [true, 'Name is required'], 
-    trim: true,
-    minlength: [2, 'Name must be at least 2 characters long'],
-    maxlength: [50, 'Name cannot exceed 50 characters'],
-    match: [/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes']
-  },
-  email: { 
-    type: String, 
-    required: [true, 'Email is required'], 
-    unique: true, 
-    lowercase: true, 
-    trim: true,
-    maxlength: [254, 'Email cannot exceed 254 characters'],
-    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address']
-  },
-  passwordHash: { 
-    type: String, 
-    required: [true, 'Password is required'],
-    minlength: [60, 'Invalid password hash'] // bcrypt hashes are always 60 chars
-  },
-  googleId: { type: String, index: true, sparse: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const UserSchema = new mongoose.Schema(
+	{
+		name: { 
+			type: String, 
+			required: [true, 'Name is required'], 
+			trim: true,
+			minlength: [2, 'Name must be at least 2 characters long'],
+			maxlength: [50, 'Name cannot exceed 50 characters'],
+			match: [/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes']
+		},
+		email: { 
+			type: String, 
+			required: [true, 'Email is required'], 
+			unique: true, 
+			lowercase: true, 
+			trim: true,
+			maxlength: [254, 'Email cannot exceed 254 characters'],
+			match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address']
+		},
+		passwordHash: { 
+			type: String, 
+			required: [true, 'Password is required'],
+			minlength: [60, 'Invalid password hash'] // bcrypt hashes are always 60 chars
+		},
+		lastSeen: { 
+			type: Date, 
+			default: null 
+		},
+		isOnline: {
+			type: Boolean,
+			default: false
+		},
+		avatar: {
+			type: String,
+			default: null
+		},
+		status: {
+			type: String,
+			enum: ['active', 'inactive', 'banned'],
+			default: 'active'
+		}
+	},
+	{ 
+		timestamps: true,
+		toJSON: { 
+			virtuals: true,
+			transform: function(doc, ret) {
+				delete ret.passwordHash;
+				return ret;
+			}
+		},
+		toObject: { 
+			virtuals: true,
+			transform: function(doc, ret) {
+				delete ret.passwordHash;
+				return ret;
+			}
+		}
+	}
+);
 
 // Indexes for better performance
 UserSchema.index({ email: 1 });

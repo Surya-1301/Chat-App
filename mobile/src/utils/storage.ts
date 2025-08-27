@@ -1,55 +1,31 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+
+const isWeb = Platform.OS === 'web';
 
 export const storage = {
   async setToken(token: string) {
-    try {
-      await SecureStore.setItemAsync('authToken', token);
-    } catch (error) {
-      console.error('Failed to store token:', error);
-    }
+    if (isWeb) localStorage.setItem('token', token);
+    else await SecureStore.setItemAsync('token', token);
   },
-
   async getToken(): Promise<string | null> {
-    try {
-      return await SecureStore.getItemAsync('authToken');
-    } catch (error) {
-      console.error('Failed to retrieve token:', error);
-      return null;
-    }
+    return isWeb ? localStorage.getItem('token') : await SecureStore.getItemAsync('token');
   },
-
   async removeToken() {
-    try {
-      await SecureStore.deleteItemAsync('authToken');
-    } catch (error) {
-      console.error('Failed to remove token:', error);
-    }
+    if (isWeb) localStorage.removeItem('token');
+    else await SecureStore.deleteItemAsync('token');
   },
-
   async setUser(user: any) {
-    try {
-      await SecureStore.setItemAsync('user', JSON.stringify(user));
-    } catch (error) {
-      console.error('Failed to store user:', error);
-    }
+    const v = JSON.stringify(user ?? {});
+    if (isWeb) localStorage.setItem('user', v);
+    else await SecureStore.setItemAsync('user', v);
   },
-
   async getUser(): Promise<any | null> {
-    try {
-      const userStr = await SecureStore.getItemAsync('user');
-      return userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-      console.error('Failed to retrieve user:', error);
-      return null;
-    }
+    const v = isWeb ? localStorage.getItem('user') : await SecureStore.getItemAsync('user');
+    return v ? JSON.parse(v) : null;
   },
-
-  async clearAuth() {
-    try {
-      await SecureStore.deleteItemAsync('authToken');
-      await SecureStore.deleteItemAsync('user');
-    } catch (error) {
-      console.error('Failed to clear auth data:', error);
-    }
-  }
+  async removeUser() {
+    if (isWeb) localStorage.removeItem('user');
+    else await SecureStore.deleteItemAsync('user');
+  },
 };
