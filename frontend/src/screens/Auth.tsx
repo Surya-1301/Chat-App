@@ -20,23 +20,25 @@ export default function Auth({ navigation }: NavigationProps) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { login, register, googleLogin } = useContext(AuthContext);
 
-  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
-  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  // removed expoClientId to satisfy types
+  // web-only: use the single web client id env var (may be unset in dev)
+  const webClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 
-  if (typeof window !== 'undefined' && !webClientId) {
-    throw new Error('Client Id property `webClientId` must be defined to use Google auth on this platform. Set EXPO_PUBLIC_GOOGLE_CLIENT_ID when starting Expo.');
+  // Do not throw here — warn and disable Google sign-in if client id is missing
+  const googleEnabled = Boolean(webClientId);
+  if (!googleEnabled) {
+    // warn once (won't block app)
+    // eslint-disable-next-line no-console
+    console.warn(
+      'Google web client id not set. Set EXPO_PUBLIC_GOOGLE_CLIENT_ID when starting Expo (web) to enable Google Sign-In.'
+    );
   }
 
-  // keep only keys supported by the typed config
+  // safe: pass clientId (may be empty string). request will be null/undefined if not configured.
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: webClientId,        // use clientId for web when types expect it
-    androidClientId,
-    iosClientId,
-    webClientId,
+    clientId: webClientId || undefined,
     scopes: ['profile', 'email'],
-  } as any); // cast to any to avoid strict type mismatches
+  } as any);
 
   useEffect(() => {
     if (response?.type === 'success') {
@@ -64,15 +66,18 @@ export default function Auth({ navigation }: NavigationProps) {
   }, [response]);
 
   async function handleGoogleSignIn() {
+    if (!googleEnabled) {
+      Alert.alert('Google Sign-In disabled', 'Google client id is not configured for web.');
+      return;
+    }
     if (!request) {
-      Alert.alert('Google Sign-in not configured', 'Missing Google client id or request initialization.');
+      Alert.alert('Google Sign-In not configured', 'Auth request not initialized.');
       return;
     }
     if (googleLoading) return;
     try {
       setGoogleLoading(true);
-      // cast options to any to avoid TS complaining about useProxy typing
-      await promptAsync({ useProxy: true } as any);
+      await promptAsync({ useProxy: false } as any);
     } catch (err) {
       console.error('promptAsync error', err);
       Alert.alert('Sign-in error', 'Unable to start Google sign-in. Try again.');
@@ -89,7 +94,6 @@ export default function Auth({ navigation }: NavigationProps) {
     setLoading(true);
     try {
       if (isLogin) {
-        // call login with (email, password)
         const result = await login(email, password);
         const token = result?.token ?? (result as any)?.data?.token ?? null;
         const user = result?.user ?? (result as any)?.data?.user ?? null;
@@ -103,7 +107,6 @@ export default function Auth({ navigation }: NavigationProps) {
         if (user) await storage.setUser(user);
         navigation.replace('Users', { token, user });
       } else {
-        // call register with full payload (name required)
         const result = await register({ name, email, password });
         const token = result?.token ?? (result as any)?.data?.token ?? null;
         const user = result?.user ?? (result as any)?.data?.user ?? null;
@@ -126,26 +129,80 @@ export default function Auth({ navigation }: NavigationProps) {
     }
   }
 
-  // print redirect URIs for debugging (cast options to any)
-  console.log('Redirect URI (useProxy true) =', makeRedirectUri({ useProxy: true } as any));
-  console.log('Redirect URI (no proxy) =', makeRedirectUri({ useProxy: false } as any));
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isLogin ? 'Login' : 'Register'}</Text>
 
       {!isLogin && (
-        <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} autoCapitalize="words" />
+        <TextInput
+          placeholder="Name"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+          autoCapitalize="words"
+          autoComplete="name"
+          textContentType="name"
+          id="name"
+          name="name"
+          accessibilityLabel="Name"
+        />
       )}
 
-      <TextInput placeholder="Email" autoCapitalize="none" value={email} onChangeText={setEmail} style={styles.input} keyboardType="email-address" />
-      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} style={styles.input} />
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        id="email"
+        name="email"
+        accessibilityLabel="Email"
+        style={styles.input}
+      />
 
-      <PrimaryButton title={loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'} onPress={submit} disabled={loading} loading={loading} style={{ marginTop: theme.spacing(1) }} />
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Password"
+        secureTextEntry
+        autoComplete="current-password"
+        textContentType="password"
+        id="password"
+        name="password"
+        accessibilityLabel="Password"
+        style={styles.input}
+      />
 
-      <PrimaryButton title={isLogin ? 'Need an account? Register' : 'Have an account? Login'} onPress={() => setIsLogin(!isLogin)} disabled={loading} style={{ backgroundColor: theme.colors.primaryDark, marginTop: theme.spacing(1) }} />
+      <PrimaryButton
+        title={loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
+        onPress={submit}
+        disabled={loading}
+        loading={loading}
+        style={{ marginTop: theme.spacing(1) }}
+      />
 
-      <PrimaryButton title="Sign in with Google" onPress={handleGoogleSignIn} disabled={!request || loading || googleLoading} style={{ marginTop: theme.spacing(1), backgroundColor: '#DB4437' }} />
+      <PrimaryButton
+        title={isLogin ? 'Need an account? Register' : 'Have an account? Login'}
+        onPress={() => setIsLogin(!isLogin)}
+        disabled={loading}
+        style={{ backgroundColor: theme.colors.primaryDark, marginTop: theme.spacing(1) }}
+      />
+
+      <PrimaryButton
+        title="Sign in with Google"
+        onPress={handleGoogleSignIn}
+        disabled={!googleEnabled || !request || loading || googleLoading}
+        style={{ marginTop: theme.spacing(1), backgroundColor: '#DB4437' }}
+      />
+
+      {/* optional: show small hint when disabled */}
+      {!googleEnabled && (
+        <Text style={{ textAlign: 'center', color: '#666', marginTop: 8 }}>
+          Google Sign-In disabled — set EXPO_PUBLIC_GOOGLE_CLIENT_ID to enable.
+        </Text>
+      )}
 
       {loading && (
         <View style={styles.loadingContainer}>

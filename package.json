@@ -2,15 +2,13 @@
   "name": "chat-app-monorepo",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"cd ./backend && npm run dev\" \"cd ./frontend && EXPO_PUBLIC_API_URL=http://localhost:4000 npx expo start --web -c\""
+    "dev": "concurrently \"cd ./backend && npm run dev\" \"cd ./frontend && EXPO_PUBLIC_API_URL=http://localhost:4000 EXPO_PUBLIC_GOOGLE_CLIENT_ID=901342002340-hcl2gs88hv0avvhsmj07r35cc4es1e60.apps.googleusercontent.com npx expo start --web -c\""
   },
   "devDependencies": {
-    "@types/react": "~19.1.11",
-    "concurrently": "^9.2.1",
-    "typescript": "~5.8.3"
+    "concurrently": "^8.2.0"
   },
   "dependencies": {
     "expo": "^53.0.20"
-    
   }
+
 }

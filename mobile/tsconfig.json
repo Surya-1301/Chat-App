@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    // ...existing compiler options...
+  },
+  "include": [
+    "src/**/*",
+    "../frontend/src/**/*",
+    "../frontend/**/*"
+  ]
+}
