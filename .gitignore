@@ -35,3 +35,6 @@ coverage/
 # Misc
 *.local
 *.orig
+
+/frontend/node_modules
+/backend/node_modules
