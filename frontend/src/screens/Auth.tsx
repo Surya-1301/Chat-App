@@ -1,91 +1,21 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, Alert, StyleSheet } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import PrimaryButton from '../components/PrimaryButton';
 import { storage } from '../utils/storage';
 import { NavigationProps } from '../types';
-import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function Auth({ navigation }: NavigationProps) {
+  const { login, register } = useContext(AuthContext);
   const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const { login, register, googleLogin } = useContext(AuthContext);
-
-  // web-only: use the single web client id env var (may be unset in dev)
-  const webClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
-
-  // Do not throw here — warn and disable Google sign-in if client id is missing
-  const googleEnabled = Boolean(webClientId);
-  if (!googleEnabled) {
-    // warn once (won't block app)
-    // eslint-disable-next-line no-console
-    console.warn(
-      'Google web client id not set. Set EXPO_PUBLIC_GOOGLE_CLIENT_ID when starting Expo (web) to enable Google Sign-In.'
-    );
-  }
-
-  // safe: pass clientId (may be empty string). request will be null/undefined if not configured.
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: webClientId || undefined,
-    scopes: ['profile', 'email'],
-  } as any);
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.authentication?.idToken;
-      if (idToken) {
-        (async () => {
-          try {
-            setLoading(true);
-            await googleLogin(idToken);
-            navigation.replace('Users');
-          } catch (err: unknown) {
-            console.error('Google sign-in failed', err);
-            Alert.alert('Google sign-in failed', (err as any)?.message ?? 'Try again');
-          } finally {
-            setLoading(false);
-            setGoogleLoading(false);
-          }
-        })();
-      } else {
-        setGoogleLoading(false);
-      }
-    } else {
-      setGoogleLoading(false);
-    }
-  }, [response]);
-
-  async function handleGoogleSignIn() {
-    if (!googleEnabled) {
-      Alert.alert('Google Sign-In disabled', 'Google client id is not configured for web.');
-      return;
-    }
-    if (!request) {
-      Alert.alert('Google Sign-In not configured', 'Auth request not initialized.');
-      return;
-    }
-    if (googleLoading) return;
-    try {
-      setGoogleLoading(true);
-      await promptAsync({ useProxy: false } as any);
-    } catch (err) {
-      console.error('promptAsync error', err);
-      Alert.alert('Sign-in error', 'Unable to start Google sign-in. Try again.');
-      setGoogleLoading(false);
-    }
-  }
 
   async function submit() {
+    console.log('Auth.submit called', { isLogin, email, password, name }); // <--- debug: verifies button click
     if (!email || !password || (!isLogin && !name)) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -95,30 +25,26 @@ export default function Auth({ navigation }: NavigationProps) {
     try {
       if (isLogin) {
         const result = await login(email, password);
-        const token = result?.token ?? (result as any)?.data?.token ?? null;
-        const user = result?.user ?? (result as any)?.data?.user ?? null;
-
+        console.log('login result', result); // <--- debug: shows backend response
+        const token = result?.token ?? null;
         if (!token) {
           Alert.alert('Login failed', 'Server did not return a token.');
           return;
         }
-
         await storage.setToken(token);
-        if (user) await storage.setUser(user);
-        navigation.replace('Users', { token, user });
+        if (result.user) await storage.setUser(result.user);
+        navigation.replace('Users', { token, user: result.user });
       } else {
         const result = await register({ name, email, password });
-        const token = result?.token ?? (result as any)?.data?.token ?? null;
-        const user = result?.user ?? (result as any)?.data?.user ?? null;
-
+        console.log('register result', result); // <--- debug
+        const token = result?.token ?? null;
         if (!token) {
           Alert.alert('Register failed', 'Server did not return a token.');
           return;
         }
-
         await storage.setToken(token);
-        if (user) await storage.setUser(user);
-        navigation.replace('Users', { token, user });
+        if (result.user) await storage.setUser(result.user);
+        navigation.replace('Users', { token, user: result.user });
       }
     } catch (e: any) {
       console.error('[Auth] submit error', e);
@@ -142,8 +68,7 @@ export default function Auth({ navigation }: NavigationProps) {
           autoCapitalize="words"
           autoComplete="name"
           textContentType="name"
-          id="name"
-          name="name"
+          nativeID="name"                     // added: maps to id on web
           accessibilityLabel="Name"
         />
       )}
@@ -156,8 +81,7 @@ export default function Auth({ navigation }: NavigationProps) {
         autoCapitalize="none"
         autoComplete="email"
         textContentType="emailAddress"
-        id="email"
-        name="email"
+        nativeID="email"                    // added: maps to id on web
         accessibilityLabel="Email"
         style={styles.input}
       />
@@ -169,8 +93,7 @@ export default function Auth({ navigation }: NavigationProps) {
         secureTextEntry
         autoComplete="current-password"
         textContentType="password"
-        id="password"
-        name="password"
+        nativeID="password"                 // added: maps to id on web
         accessibilityLabel="Password"
         style={styles.input}
       />
@@ -183,32 +106,12 @@ export default function Auth({ navigation }: NavigationProps) {
         style={{ marginTop: theme.spacing(1) }}
       />
 
-      <PrimaryButton
-        title={isLogin ? 'Need an account? Register' : 'Have an account? Login'}
+      <Text
+        style={styles.switchText}
         onPress={() => setIsLogin(!isLogin)}
-        disabled={loading}
-        style={{ backgroundColor: theme.colors.primaryDark, marginTop: theme.spacing(1) }}
-      />
-
-      <PrimaryButton
-        title="Sign in with Google"
-        onPress={handleGoogleSignIn}
-        disabled={!googleEnabled || !request || loading || googleLoading}
-        style={{ marginTop: theme.spacing(1), backgroundColor: '#DB4437' }}
-      />
-
-      {/* optional: show small hint when disabled */}
-      {!googleEnabled && (
-        <Text style={{ textAlign: 'center', color: '#666', marginTop: 8 }}>
-          Google Sign-In disabled — set EXPO_PUBLIC_GOOGLE_CLIENT_ID to enable.
-        </Text>
-      )}
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      )}
+      >
+        {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
+      </Text>
     </View>
   );
 }
@@ -216,32 +119,25 @@ export default function Auth({ navigation }: NavigationProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
     justifyContent: 'center',
-    padding: theme.spacing(2),
-    backgroundColor: theme.colors.background,
   },
   title: {
-    ...theme.text.title,
+    fontSize: 24,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: theme.spacing(2),
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing(1.5),
-    borderRadius: theme.radius.lg,
-    fontSize: 16,
-    marginBottom: theme.spacing(1.2),
+    borderColor: '#ccc',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.8)',
+  switchText: {
+    textAlign: 'center',
+    color: '#007BFF',
+    marginTop: 16,
   },
 });

@@ -7,23 +7,20 @@ interface Props {
   onPress: (event: GestureResponderEvent) => void;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: ViewStyle | any;
 }
 
 export default function PrimaryButton({ title, onPress, disabled, loading, style }: Props) {
+  const blocked = Boolean(disabled || loading);
   return (
-    <View style={[styles.wrapper, style, { pointerEvents: (disabled || loading) ? 'none' : 'auto' }]}>
+    <View style={[styles.wrapper, style, { pointerEvents: blocked ? 'none' : 'auto' }]}>
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={onPress}
-        disabled={disabled || loading}
-        style={[styles.button, (disabled || loading) && styles.buttonDisabled]}
+        disabled={blocked}
+        style={[styles.button, blocked && styles.buttonDisabled]}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.title}>{title}</Text>
-        )}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.title}>{title}</Text>}
       </TouchableOpacity>
     </View>
   );

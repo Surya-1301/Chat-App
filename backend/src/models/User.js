@@ -29,7 +29,6 @@ const UserSchema = new Schema({
 });
 
 // Indexes for better performance
-UserSchema.index({ email: 1 });
 UserSchema.index({ lastSeen: -1 });
 UserSchema.index({ isOnline: 1 });
 UserSchema.index({ status: 1 });

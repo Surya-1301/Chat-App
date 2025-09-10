@@ -28,10 +28,6 @@
     "extra": {
       "eas": {},
       "router": {}
-    },
-    "plugins": [
-      "expo-secure-store",
-      "expo-web-browser"
-    ]
+    }
   }
 }

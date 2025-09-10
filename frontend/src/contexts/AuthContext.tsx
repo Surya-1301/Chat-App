@@ -10,6 +10,7 @@ type AuthContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthPayload>;
   register: (payload: { name: string; email: string; password: string }) => Promise<AuthPayload>;
+  googleLogin?: (idToken: string) => Promise<AuthPayload>;
   logout: () => Promise<void>;
 };
 
@@ -21,6 +22,7 @@ export const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: noop,
   register: noop,
+  googleLogin: undefined,
   logout: async () => {},
 });
 
@@ -74,6 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { token: data.token, user: data.user };
   };
 
+  // optional backend exchange endpoint /auth/google
+  const googleLogin = async (idToken: string) => {
+    const res = await client.post('/auth/google', { idToken });
+    const data = normalize(res);
+    if (!data?.token) throw new Error(data?.message || 'No token returned');
+    await AsyncStorage.setItem('token', data.token);
+    if (data.user) await AsyncStorage.setItem('user', JSON.stringify(data.user));
+    setAuthToken(data.token);
+    setToken(data.token);
+    setUser(data.user ?? null);
+    return { token: data.token, user: data.user };
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('token');
@@ -87,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ token, user, loading, login, register, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
