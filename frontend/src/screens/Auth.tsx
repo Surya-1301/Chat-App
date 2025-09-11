@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet } from '../web-shims/react-native-web';
 import { AuthContext } from '../contexts/AuthContext';
 import PrimaryButton from '../components/PrimaryButton';
 import { storage } from '../utils/storage';

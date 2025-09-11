@@ -1,5 +1,11 @@
 import React, { createContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// Use browser localStorage on web
+const webStorage = {
+  getItem: async (k: string) => Promise.resolve(localStorage.getItem(k)),
+  setItem: async (k: string, v: string) => Promise.resolve(localStorage.setItem(k, v)),
+  removeItem: async (k: string) => Promise.resolve(localStorage.removeItem(k)),
+};
+const AsyncStorage = webStorage;
 import { client, setAuthToken } from '../api/client';
 
 type AuthPayload = { token: string; user?: any };
@@ -7,6 +13,7 @@ type AuthPayload = { token: string; user?: any };
 type AuthContextType = {
   token: string | null;
   user: any | null;
+  userId?: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthPayload>;
   register: (payload: { name: string; email: string; password: string }) => Promise<AuthPayload>;
@@ -19,6 +26,7 @@ const noop = async () => ({ token: '', user: null } as AuthPayload);
 export const AuthContext = createContext<AuthContextType>({
   token: null,
   user: null,
+  userId: null,
   loading: true,
   login: noop,
   register: noop,
@@ -102,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, register, googleLogin, logout }}>
+  <AuthContext.Provider value={{ token, user, userId: user?._id ?? null, loading, login, register, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

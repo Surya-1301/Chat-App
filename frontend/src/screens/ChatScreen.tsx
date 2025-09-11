@@ -10,9 +10,8 @@ import {
   Platform,
   Pressable,
   Keyboard,
-} from 'react-native';
+} from '../web-shims/react-native-web';
 import io, { Socket } from 'socket.io-client';
-import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
 
 type Message = {
@@ -44,7 +43,7 @@ function genId() {
 }
 
 export default function ChatScreen({ route }: { route: RouteProps }) {
-  const navigation = useNavigation<any>();
+  const navigation = { goBack: () => window.history.back() } as any;
   const { token, userId } = useContext(AuthContext); // userId exposed by AuthContext
   const roomId = route?.params?.roomId ?? null;
   const roomName = route?.params?.roomName ?? 'Global';
@@ -57,7 +56,7 @@ export default function ChatScreen({ route }: { route: RouteProps }) {
   const socketRef = useRef<Socket | null>(null);
   const prevRoomRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const listRef = useRef<FlatList<Message> | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     socketRef.current = io(SOCKET_URL, { transports: ['websocket'] });
@@ -135,7 +134,7 @@ export default function ChatScreen({ route }: { route: RouteProps }) {
   useEffect(() => {
     if (listRef.current && messages.length > 0) {
       try {
-        listRef.current.scrollToOffset({ offset: 999999, animated: true });
+  (listRef.current as HTMLDivElement).scrollTop = 999999;
       } catch (e) {}
     }
   }, [messages]);
@@ -207,8 +206,8 @@ export default function ChatScreen({ route }: { route: RouteProps }) {
         <FlatList
           ref={listRef}
           data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({item}) => (
+          keyExtractor={(item: Message) => item.id}
+          renderItem={({item}: { item: Message }) => (
             <View style={[styles.bubble,
               item.fromId === socketRef.current?.id ? styles.ownBubble : styles.otherBubble]}>
               <Text style={styles.from}>{item.from}{ item.read ? ' ✓✓' : item.delivered ? ' ✓' : ''}</Text>

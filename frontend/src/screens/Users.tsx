@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from '../web-shims/react-native-web';
 import { api } from '../api/client';
 import { User, NavigationProps, ApiResponse } from '../types';
 
@@ -66,8 +66,8 @@ export default function Users({ navigation, route }: NavigationProps) {
     <View style={styles.container}>
       <FlatList 
         data={users} 
-        keyExtractor={(u) => u._id} 
-        renderItem={({ item }) => (
+  keyExtractor={(u: User) => u._id} 
+  renderItem={({ item }: { item: User }) => (
           <TouchableOpacity 
             onPress={() => navigation.navigate('Chat', { token, me: user, other: item })} 
             style={styles.userItem}

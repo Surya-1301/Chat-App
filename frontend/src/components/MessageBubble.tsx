@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, MouseEvent } from 'react';
 import { theme } from '../theme';
 import { SocketMessage } from '../services/socketService';
 
@@ -16,199 +15,69 @@ export default function MessageBubble({ message, isMine, onReaction, onReply }: 
   const [showReactions, setShowReactions] = useState(false);
 
   const handleReaction = (reaction: string) => {
-    if (onReaction) {
-      onReaction(message._id, reaction);
-    }
+    if (onReaction) onReaction(message._id, reaction);
     setShowReactions(false);
   };
 
-  const handleLongPress = () => {
-    setShowReactions(!showReactions);
+  const handleContext = (e: MouseEvent) => {
+    e.preventDefault();
+    setShowReactions((s) => !s);
   };
 
-  const renderStatus = () => {
-    if (isMine) {
-      const delivered = !!message.deliveredAt;
-      const read = !!message.readAt;
-      const ticks = read ? '✓✓' : delivered ? '✓✓' : '✓';
-      const color = read ? '#34B7F1' : '#666';
-      return (
-        <Text style={[styles.statusText, { color }]}>{ticks}</Text>
-      );
-    }
-    return null;
-  };
-
-  const renderReactions = () => {
-    if (!showReactions) return null;
-
-    return (
-      <View style={[styles.reactionsContainer, isMine ? styles.reactionsRight : styles.reactionsLeft]}>
-        {REACTIONS.map((reaction, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.reactionButton}
-            onPress={() => handleReaction(reaction)}
-          >
-            <Text style={styles.reactionText}>{reaction}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  };
-
-  const renderReply = () => {
-    if (!message.replyTo) return null;
-
-    return (
-      <View style={styles.replyContainer}>
-        <Text style={styles.replyText} numberOfLines={1}>
-          Replying to: {message.replyTo}
-        </Text>
-      </View>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      {renderReply()}
-      
-      <TouchableOpacity
-        style={[
-          styles.messageContainer,
-          isMine ? styles.myMessage : styles.otherMessage
-        ]}
-        onLongPress={handleLongPress}
-        onPress={() => onReply && onReply(message)}
-      >
-        <Text style={styles.messageText}>{message.content}</Text>
-        <View style={styles.messageFooter}>
-          <Text style={styles.timestamp}>
-            {new Date(message.createdAt).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </Text>
-          {renderStatus()}
-        </View>
-      </TouchableOpacity>
-
-      {renderReactions()}
-
-      {/* Message reactions display */}
-      {message.reactions && Object.keys(message.reactions).length > 0 && (
-        <View style={[styles.reactionsDisplay, isMine ? styles.reactionsDisplayRight : styles.reactionsDisplayLeft]}>
-          {Object.entries(message.reactions).map(([userId, reaction]) => (
-            <View key={userId} style={styles.reactionItem}>
-              <Text style={styles.reactionText}>{reaction}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 2,
-  },
-  messageContainer: {
+  const containerStyle: React.CSSProperties = { margin: '8px 0' };
+  const baseMessageStyle: React.CSSProperties = {
     padding: 12,
     margin: 4,
     borderRadius: 16,
     maxWidth: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  myMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: theme.colors.primary,
-  },
-  otherMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-    color: '#000',
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  timestamp: {
-    fontSize: 10,
-    color: '#666',
-  },
-  statusText: {
-    fontSize: 10,
-    color: '#666',
-  },
-  replyContainer: {
-    paddingHorizontal: 8,
-    marginBottom: 4,
-  },
-  replyText: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  reactionsContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 8,
-    marginTop: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  reactionsLeft: {
-    alignSelf: 'flex-start',
-    marginLeft: 16,
-  },
-  reactionsRight: {
-    alignSelf: 'flex-end',
-    marginRight: 16,
-  },
-  reactionButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginHorizontal: 2,
-  },
-  reactionText: {
-    fontSize: 16,
-  },
-  reactionsDisplay: {
-    flexDirection: 'row',
-    marginTop: 4,
-    flexWrap: 'wrap',
-  },
-  reactionsDisplayLeft: {
-    alignSelf: 'flex-start',
-    marginLeft: 16,
-  },
-  reactionsDisplayRight: {
-    alignSelf: 'flex-end',
-    marginRight: 16,
-  },
-  reactionItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginHorizontal: 1,
-    marginVertical: 1,
-  },
-});
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+  };
+  const myMessageStyle: React.CSSProperties = { ...baseMessageStyle, marginLeft: 'auto', backgroundColor: theme.colors.primary, color: '#fff' };
+  const otherMessageStyle: React.CSSProperties = { ...baseMessageStyle, marginRight: 'auto', backgroundColor: '#fff', border: '1px solid #e0e0e0' };
+  const footerStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 };
+  const smallText: React.CSSProperties = { fontSize: 12, color: '#666' };
+
+  return (
+    <div style={containerStyle}>
+      {message.replyTo && (
+        <div style={{ padding: '0 8px', marginBottom: 4 }}>
+          <span style={{ fontSize: 12, color: '#666', fontStyle: 'italic' }}>Replying to: {message.replyTo}</span>
+        </div>
+      )}
+
+      <div
+        style={isMine ? myMessageStyle : otherMessageStyle}
+        onContextMenu={handleContext}
+        onClick={() => onReply && onReply(message)}
+        role="button"
+        tabIndex={0}
+      >
+        <div style={{ fontSize: 16, lineHeight: '20px', color: isMine ? '#fff' : '#000' }}>{message.content}</div>
+        <div style={footerStyle}>
+          <span style={smallText}>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          {isMine && (
+            <span style={{ ...smallText, color: message.readAt ? '#34B7F1' : '#666' }}>
+              {message.readAt ? '✓✓' : message.deliveredAt ? '✓' : ''}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {showReactions && (
+        <div style={{ display: 'flex', gap: 6, padding: 8, marginTop: 4 }}>
+          {REACTIONS.map((r) => (
+            <button key={r} onClick={() => handleReaction(r)} style={{ padding: '4px 8px', borderRadius: 8, border: 'none', background: '#fff', cursor: 'pointer' }}>{r}</button>
+          ))}
+        </div>
+      )}
+
+      {message.reactions && Object.keys(message.reactions).length > 0 && (
+        <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+          {Object.entries(message.reactions).map(([userId, reaction]) => (
+            <div key={userId} style={{ backgroundColor: '#f0f0f0', borderRadius: 12, padding: '2px 6px', fontSize: 12 }}>{reaction}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

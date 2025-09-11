@@ -1,8 +1,8 @@
-import 'react-native-gesture-handler';
 import React from 'react';
-import { registerRootComponent } from 'expo';
+import { createRoot } from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import './index.css';
 
 function Root() {
   return (
@@ -12,4 +12,10 @@ function Root() {
   );
 }
 
-registerRootComponent(Root);
+const container = document.getElementById('root')!;
+const root = createRoot(container);
+root.render(
+  <React.StrictMode>
+    <Root />
+  </React.StrictMode>
+);

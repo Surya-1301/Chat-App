@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text } from './web-shims/react-native-web';
 import { AuthProvider } from './contexts/AuthContext';
 
 // runtime-safe require of Root (handles missing file / wrong path)

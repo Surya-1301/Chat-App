@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Animated } from '../web-shims/react-native-web';
 import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
 import { io } from 'socket.io-client';
@@ -208,8 +208,8 @@ export default function Chat({ route }: NavigationProps) {
       <FlatList
         style={styles.messageList}
         data={messages}
-        keyExtractor={(m) => m._id}
-        renderItem={({ item }) => (
+          keyExtractor={(m: any) => m._id}
+          renderItem={({ item }: { item: any }) => (
           <View style={[
             styles.messageContainer,
             item.from === me._id ? styles.myMessage : styles.otherMessage

@@ -10,6 +10,8 @@ export interface SocketMessage {
   createdAt: string;
   deliveredAt?: string;
   readAt?: string;
+  replyTo?: string;
+  reactions?: Record<string, string>;
 }
 
 export interface SocketEvents {

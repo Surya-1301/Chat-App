@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert } from '../web-shims/react-native-web';
 import socketService, { SocketMessage } from '../services/socketService';
 import { api } from '../api/client';
 
@@ -76,7 +76,6 @@ export const useRealTimeChat = ({ token, otherUserId, conversationId }: UseRealT
       const result = await socketService.sendMessage(otherUserId, content.trim());
       if (result.ok && result.message) {
         // Message sent successfully, it will be added via socket event
-        setText('');
       } else {
         Alert.alert('Error', result.error || 'Failed to send message');
       }

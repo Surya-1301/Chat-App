@@ -1,17 +1,21 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+const webStorage = {
+  getItem: async (k: string) => Promise.resolve(localStorage.getItem(k)),
+  setItem: async (k: string, v: string) => Promise.resolve(localStorage.setItem(k, v)),
+  removeItem: async (k: string) => Promise.resolve(localStorage.removeItem(k)),
+};
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
 export const storage = {
-  setToken: async (t: string) => AsyncStorage.setItem(TOKEN_KEY, t),
-  getToken: async () => AsyncStorage.getItem(TOKEN_KEY),
-  removeToken: async () => AsyncStorage.removeItem(TOKEN_KEY),
+  setToken: async (t: string) => webStorage.setItem(TOKEN_KEY, t),
+  getToken: async () => webStorage.getItem(TOKEN_KEY),
+  removeToken: async () => webStorage.removeItem(TOKEN_KEY),
 
-  setUser: async (u: any) => AsyncStorage.setItem(USER_KEY, JSON.stringify(u)),
+  setUser: async (u: any) => webStorage.setItem(USER_KEY, JSON.stringify(u)),
   getUser: async () => {
-    const raw = await AsyncStorage.getItem(USER_KEY);
+    const raw = await webStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   },
-  removeUser: async () => AsyncStorage.removeItem(USER_KEY),
+  removeUser: async () => webStorage.removeItem(USER_KEY),
 };

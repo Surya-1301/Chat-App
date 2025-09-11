@@ -1,47 +1,34 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ActivityIndicator, GestureResponderEvent, ViewStyle } from 'react-native';
 import { theme } from '../theme';
 
 interface Props {
   title: string;
-  onPress: (event: GestureResponderEvent) => void;
+  onPress: (event?: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle | any;
+  style?: React.CSSProperties | any;
 }
 
 export default function PrimaryButton({ title, onPress, disabled, loading, style }: Props) {
   const blocked = Boolean(disabled || loading);
+  const wrapperStyle: React.CSSProperties = { width: '100%', ...(style || {}) };
+  const buttonStyle: React.CSSProperties = {
+    backgroundColor: theme.colors.primary,
+    padding: '10px 16px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.radius.lg,
+    border: 'none',
+    cursor: blocked ? 'not-allowed' : 'pointer',
+    opacity: blocked ? 0.6 : 1,
+  };
+
   return (
-    <View style={[styles.wrapper, style, { pointerEvents: blocked ? 'none' : 'auto' }]}>
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={onPress}
-        disabled={blocked}
-        style={[styles.button, blocked && styles.buttonDisabled]}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.title}>{title}</Text>}
-      </TouchableOpacity>
-    </View>
+    <div style={wrapperStyle}>
+      <button onClick={onPress} disabled={blocked} style={buttonStyle}>
+        {loading ? 'Loading...' : <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{title}</span>}
+      </button>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-  },
-  button: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing(1.5),
-    alignItems: 'center',
-    borderRadius: theme.radius.lg,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  title: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-});
