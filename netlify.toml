@@ -5,6 +5,9 @@
   command = "cd 'frontend' && npm ci --no-audit --no-fund && npm run build"
   publish = "frontend/build"
 
+[build.environment]
+  NODE_VERSION = "18"
+
 [context.production.environment]
   # Netlify sets NODE_ENV=production by default during build. If your app needs dev deps
   # to build with expo, you can override this or install expo-cli globally in the build command.
