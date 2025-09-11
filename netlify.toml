@@ -1,0 +1,11 @@
+[build]
+  # Install deps, ensure expo-cli is available, then export the web build into frontend/web-build
+  # Using a guarded approach so Netlify will succeed even if expo-cli isn't installed globally.
+  command = "cd 'frontend' && npm install --no-audit --no-fund && (npx expo export:web web-build || (npm install -g expo-cli && npx expo export:web web-build))"
+  publish = "frontend/web-build"
+
+[context.production.environment]
+  # Netlify sets NODE_ENV=production by default during build. If your app needs dev deps
+  # to build with expo, you can override this or install expo-cli globally in the build command.
+  # Example runtime env variables (set real values in Netlify UI):
+  # EXPO_PUBLIC_API_URL = "https://api.example.com"

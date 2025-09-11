@@ -6,6 +6,9 @@ export const client = axios.create({
   timeout: 15000,
 });
 
+// Provide legacy alias `api` used across the codebase
+export const api = client;
+
 export function setAuthToken(token?: string | null) {
   if (token) client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   else delete client.defaults.headers.common['Authorization'];
