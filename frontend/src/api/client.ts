@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+// Prefer CRA env var, fall back to Expo-style for backwards compatibility.
+const BASE = (process.env.REACT_APP_API_URL as string) || (process.env.EXPO_PUBLIC_API_URL as string) || 'http://localhost:4000';
 export const client = axios.create({
   baseURL: BASE,
   timeout: 15000,

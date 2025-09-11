@@ -1,68 +1,43 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const UserSchema = new mongoose.Schema(
-	{
-		name: { 
-			type: String, 
-			required: [true, 'Name is required'], 
-			trim: true,
-			minlength: [2, 'Name must be at least 2 characters long'],
-			maxlength: [50, 'Name cannot exceed 50 characters'],
-			match: [/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes']
-		},
-		email: { 
-			type: String, 
-			required: [true, 'Email is required'], 
-			unique: true, 
-			lowercase: true, 
-			trim: true,
-			maxlength: [254, 'Email cannot exceed 254 characters'],
-			match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address']
-		},
-		passwordHash: { 
-			type: String, 
-			required: [true, 'Password is required'],
-			minlength: [60, 'Invalid password hash'] // bcrypt hashes are always 60 chars
-		},
-		lastSeen: { 
-			type: Date, 
-			default: null 
-		},
-		isOnline: {
-			type: Boolean,
-			default: false
-		},
-		avatar: {
-			type: String,
-			default: null
-		},
-		status: {
-			type: String,
-			enum: ['active', 'inactive', 'banned'],
-			default: 'active'
-		}
+const UserSchema = new Schema({
+  name: { 
+    type: String, 
+    required: [true, 'Name is required'], 
+    trim: true,
+    minlength: [2, 'Name must be at least 2 characters long'],
+    maxlength: [50, 'Name cannot exceed 50 characters'],
+    match: [/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes']
+  },
+  email: { 
+    type: String, 
+    required: [true, 'Email is required'], 
+    unique: true, 
+    lowercase: true, 
+    trim: true,
+    maxlength: [254, 'Email cannot exceed 254 characters'],
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address']
+  },
+	username: {
+		type: String,
+		required: false,
+		unique: true,
+		trim: true,
+		lowercase: true,
+		maxlength: [30, 'Username cannot exceed 30 characters'],
+		match: [/^[a-z0-9._-]+$/, 'Username can only contain lowercase letters, numbers, dot, underscore or hyphen']
 	},
-	{ 
-		timestamps: true,
-		toJSON: { 
-			virtuals: true,
-			transform: function(doc, ret) {
-				delete ret.passwordHash;
-				return ret;
-			}
-		},
-		toObject: { 
-			virtuals: true,
-			transform: function(doc, ret) {
-				delete ret.passwordHash;
-				return ret;
-			}
-		}
-	}
-);
+  passwordHash: { 
+    type: String, 
+    required: [true, 'Password is required'],
+    minlength: [60, 'Invalid password hash'] // bcrypt hashes are always 60 chars
+  },
+  googleId: { type: String, index: true, sparse: true },
+  createdAt: { type: Date, default: Date.now },
+});
 
 // Indexes for better performance
-UserSchema.index({ email: 1 });
 UserSchema.index({ lastSeen: -1 });
 UserSchema.index({ isOnline: 1 });
 UserSchema.index({ status: 1 });

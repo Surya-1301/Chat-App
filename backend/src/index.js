@@ -15,7 +15,12 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-const corsOrigins = (process.env.CORS_ORIGINS || '*').split(',').map(s => s.trim());
+let corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+// In development, ensure local frontend dev server is allowed
+if (process.env.NODE_ENV === 'development') {
+  if (!corsOrigins.includes('http://localhost:3000')) corsOrigins.push('http://localhost:3000');
+}
+if (corsOrigins.length === 0) corsOrigins = ['*'];
 app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
@@ -25,7 +30,17 @@ app.get('/', (req, res) => res.json({ name: 'Chat App API', status: 'ok' }));
 app.get('/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 
 // routes
-app.use('/auth', require('./routes/auth'));
+const authRouter = require('./routes/auth');
+// Debug: list registered auth router routes
+try {
+  const routes = (authRouter && authRouter.stack) ? authRouter.stack
+    .filter((s) => s.route)
+    .map((s) => ({ path: s.route.path, methods: Object.keys(s.route.methods) })) : [];
+  console.log('Auth router routes:', routes);
+} catch (e) {
+  console.error('Failed to inspect auth router', e);
+}
+app.use('/auth', authRouter);
 app.use('/users', require('./routes/users'));
 app.use('/conversations', require('./routes/conversations'));
 
@@ -44,19 +59,25 @@ app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 
 const server = http.createServer(app);
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server listening: http://127.0.0.1:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Server listening: http://127.0.0.1:${PORT}`));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
+// Connect to MongoDB (don't crash in development — log and continue)
+(async function initDbAndSockets() {
+  try {
+    console.log('Attempting to connect to DB:', process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
     console.log('DB connected');
-    // attachSocket should accept the http server or create io(server)
     if (typeof attachSocket === 'function') attachSocket(server, corsOrigins);
-  })
-  .catch(err => {
+  } catch (err) {
     console.error('DB connect failed', err);
-    process.exit(1);
-  });
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Continuing without DB in development mode. Some features will be disabled.');
+      if (typeof attachSocket === 'function') attachSocket(server, corsOrigins);
+    } else {
+      process.exit(1);
+    }
+  }
+})();
 
 // graceful
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
@@ -67,54 +88,4 @@ const userSchema = new mongoose.Schema({
   // Remove any duplicate schema.index({ email: 1 }) elsewhere
 });
 
-// Register route handler
-app.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
-
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already in use' });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create and save the user
-    const user = new User({ name, email, password: hashedPassword });
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user });
-  } catch (err) {
-    console.error('Register error:', err);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Login route handler
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    if (!password || !user.password) {
-      return res.status(400).json({ message: 'Password is required' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
+// auth endpoints moved to /routes/auth.js

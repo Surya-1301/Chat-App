@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-const User = require('../src/models/User'); // adjust path/casing if needed
+const User = require('../models/User'); // Adjusted path to match the workspace structure
 
-const MONGO = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chat-app';
+const MONGO = 'mongodb://127.0.0.1:27017/chat-app'; // Default MongoDB URI
 
 async function main() {
   await mongoose.connect(MONGO, { useNewUrlParser: true, useUnifiedTopology: true });

@@ -64,24 +64,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await client.post('/auth/login', { email, password });
     const data = normalize(res);
     if (!data?.token) throw new Error(data?.message || 'No token returned');
+    // Normalize user shape: backend may return { id } while frontend expects _id
+    const userResp = data.user ?? null;
+    if (userResp && (userResp as any).id && !(userResp as any)._id) {
+      (userResp as any)._id = (userResp as any).id;
+    }
     await AsyncStorage.setItem('token', data.token);
-    if (data.user) await AsyncStorage.setItem('user', JSON.stringify(data.user));
+    if (userResp) await AsyncStorage.setItem('user', JSON.stringify(userResp));
     setAuthToken(data.token);
     setToken(data.token);
-    setUser(data.user ?? null);
-    return { token: data.token, user: data.user };
+    setUser(userResp ?? null);
+    return { token: data.token, user: userResp };
   };
 
   const register = async (payload: { name: string; email: string; password: string }) => {
     const res = await client.post('/auth/register', payload);
     const data = normalize(res);
     if (!data?.token) throw new Error(data?.message || 'No token returned');
+    const userResp = data.user ?? null;
+    if (userResp && (userResp as any).id && !(userResp as any)._id) {
+      (userResp as any)._id = (userResp as any).id;
+    }
     await AsyncStorage.setItem('token', data.token);
-    if (data.user) await AsyncStorage.setItem('user', JSON.stringify(data.user));
+    if (userResp) await AsyncStorage.setItem('user', JSON.stringify(userResp));
     setAuthToken(data.token);
     setToken(data.token);
-    setUser(data.user ?? null);
-    return { token: data.token, user: data.user };
+    setUser(userResp ?? null);
+    return { token: data.token, user: userResp };
   };
 
   // optional backend exchange endpoint /auth/google

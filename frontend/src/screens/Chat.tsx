@@ -194,65 +194,87 @@ export default function Chat({ route }: NavigationProps) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Loading messages...</Text>
-      </View>
+      <div className="auth-outer chat-outer">
+        <div className="container chat-container">
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#e46033" />
+            <Text style={styles.loadingText}>Loading messages...</Text>
+          </View>
+        </div>
+      </div>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {renderHeader()}
-      
-      <FlatList
-        style={styles.messageList}
-        data={messages}
+    <div className="auth-outer chat-outer">
+      <div className="container chat-container">
+        {renderHeader()}
+        <FlatList
+          style={styles.messageList}
+          data={messages}
           keyExtractor={(m: any) => m._id}
           renderItem={({ item }: { item: any }) => (
-          <View style={[
-            styles.messageContainer,
-            item.from === me._id ? styles.myMessage : styles.otherMessage
-          ]}>
-            <Text style={styles.messageText}>{item.content}</Text>
-            {renderStatus(item)}
+            <View style={[
+              styles.messageContainer,
+              item.from === me._id ? styles.myMessage : styles.otherMessage
+            ]}>
+              <Text style={styles.messageText}>{item.content}</Text>
+              {renderStatus(item)}
+            </View>
+          )}
+          onMomentumScrollEnd={markRead}
+          onScrollEndDrag={markRead}
+          inverted
+        />
+        {otherTyping && (
+          <View style={styles.typingContainer}>
+            <Text style={styles.typingText}>{other.name} is typing</Text>
+            <Animated.View style={[styles.typingDots, { opacity: typingAnimation }]}> 
+              <Text style={styles.typingDotsText}>...</Text>
+            </Animated.View>
           </View>
         )}
-        onMomentumScrollEnd={markRead}
-        onScrollEndDrag={markRead}
-        inverted
-      />
-      
-      {otherTyping && (
-        <View style={styles.typingContainer}>
-          <Text style={styles.typingText}>{other.name} is typing</Text>
-          <Animated.View style={[styles.typingDots, { opacity: typingAnimation }]}>
-            <Text style={styles.typingDotsText}>...</Text>
-          </Animated.View>
+        <View style={styles.inputContainer}>
+          <TextInput 
+            value={text} 
+            onChangeText={onTypingChange} 
+            placeholder='Type a message' 
+            style={styles.textInput}
+            multiline
+            maxLength={1000}
+          />
+          <TouchableOpacity onPress={send} disabled={sending || !text.trim()} style={[styles.sendBtn, (sending || !text.trim()) && { opacity: 0.5 }]}> 
+            <Text style={styles.sendText}>{sending ? '...' : 'Send'}</Text>
+          </TouchableOpacity>
         </View>
-      )}
-      
-      <View style={styles.inputContainer}>
-        <TextInput 
-          value={text} 
-          onChangeText={onTypingChange} 
-          placeholder='Type a message' 
-          style={styles.textInput}
-          multiline
-          maxLength={1000}
-        />
-        <TouchableOpacity onPress={send} disabled={sending || !text.trim()} style={[styles.sendBtn, (sending || !text.trim()) && { opacity: 0.5 }]}>
-          <Text style={styles.sendText}>{sending ? '...' : 'Send'}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </div>
+    </div>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: 'transparent',
+  },
+  chatContainer: {
+    backgroundColor: '#23232a',
+    borderRadius: 10,
+    boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+    padding: 20,
+    maxWidth: 500,
+    margin: '40px auto',
+    minHeight: 600,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  chatOuter: {
+    backgroundColor: '#25252b',
+    minHeight: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,

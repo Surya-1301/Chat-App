@@ -4,7 +4,12 @@ const mongoose = require('mongoose');
 
 async function listLastMessages(req, res) {
 	try {
-		const myId = req.userId.toString();
+		console.log('[listLastMessages] req.userId:', req.userId);
+		const myId = req.userId?.toString();
+		if (!myId || !mongoose.Types.ObjectId.isValid(myId)) {
+			console.error('[listLastMessages] Invalid myId:', myId);
+			return res.status(400).json({ message: 'Invalid user id' });
+		}
 		const conversations = await Conversation.find({ participants: myId })
 			.select('participants lastMessage')
 			.lean();
@@ -19,19 +24,28 @@ async function listLastMessages(req, res) {
 
 		return res.json({ items });
 	} catch (err) {
+		console.error('[listLastMessages] Error:', err);
 		return res.status(500).json({ message: 'Server error' });
 	}
 }
 
 async function getMessages(req, res) {
 	try {
+		console.log('[getMessages] req.userId:', req.userId, 'otherUserId:', req.params.id);
 		const otherUserId = req.params.id;
 		if (!mongoose.Types.ObjectId.isValid(otherUserId)) {
+			console.error('[getMessages] Invalid otherUserId:', otherUserId);
 			return res.status(400).json({ message: 'Invalid user id' });
 		}
-		const participants = [req.userId.toString(), otherUserId.toString()].sort();
+		const myId = req.userId?.toString();
+		if (!myId || !mongoose.Types.ObjectId.isValid(myId)) {
+			console.error('[getMessages] Invalid myId:', myId);
+			return res.status(400).json({ message: 'Invalid user id' });
+		}
+		const participants = [myId, otherUserId.toString()].sort();
 		let conversation = await Conversation.findOne({ participants: { $all: participants } });
 		if (!conversation) {
+			console.error('[getMessages] No conversation found for participants:', participants);
 			return res.json({ messages: [] });
 		}
 		const limit = Math.min(Number(req.query.limit) || 50, 100);
@@ -45,6 +59,7 @@ async function getMessages(req, res) {
 			.lean();
 		return res.json({ messages: messages.reverse() });
 	} catch (err) {
+		console.error('[getMessages] Error:', err);
 		return res.status(500).json({ message: 'Server error' });
 	}
 }

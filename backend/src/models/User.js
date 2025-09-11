@@ -19,6 +19,15 @@ const UserSchema = new Schema({
     maxlength: [254, 'Email cannot exceed 254 characters'],
     match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address']
   },
+	username: {
+		type: String,
+		required: false,
+		unique: true,
+		trim: true,
+		lowercase: true,
+		maxlength: [30, 'Username cannot exceed 30 characters'],
+		match: [/^[a-z0-9._-]+$/, 'Username can only contain lowercase letters, numbers, dot, underscore or hyphen']
+	},
   passwordHash: { 
     type: String, 
     required: [true, 'Password is required'],

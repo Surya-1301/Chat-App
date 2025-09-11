@@ -1,6 +1,6 @@
 # Chat App
 
-A real-time chat application built with React Native (Expo) for the mobile client and Node.js/Express for the backend server.
+A real-time chat application built with React App.
 
 ## Features
 
@@ -16,25 +16,25 @@ A real-time chat application built with React Native (Expo) for the mobile clien
 ## Project Structure
 
 ```
-Chat App/
-├── mobile/                 # React Native (Expo) mobile app
+Chat App/                      # repo root
+├── backend/                   # Express API + Socket.IO + Mongoose (server-side)
 │   ├── src/
-│   │   ├── api/           # API client configuration
-│   │   ├── config/        # Environment configuration
-│   │   ├── screens/       # App screens
-│   │   ├── types/         # TypeScript type definitions
-│   │   └── utils/         # Utility functions
-│   └── App.tsx            # Main app component
-└── server/                 # Node.js backend server
-    ├── src/
-    │   ├── config/        # Database configuration
-    │   ├── controllers/   # Route controllers
-    │   ├── middleware/    # Express middleware
-    │   ├── models/        # Mongoose models
-    │   ├── routes/        # API routes
-    │   ├── socket/        # Socket.IO handlers
-    │   └── utils/         # Utility functions
-    └── index.js           # Server entry point
+│   ├── routes/
+│   ├── models/
+│   └── package.json
+├── frontend/                  # React web client (Create React App)
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── mobile/                    # legacy Expo/mobile app (kept for history)
+├── config/                    # shared config (DB, env, etc.)
+├── scripts/                   # utility scripts (cleanup, seeds, etc.)
+├── AUTHENTICATION_GUIDE.md
+├── REAL_TIME_FEATURES.md
+├── NETLIFY_DEPLOY.md
+├── DEPLOY.md
+├── package.json               # root scripts (dev/start)
+└── README.md
 ```
 
 ## Prerequisites
@@ -48,157 +48,144 @@ Chat App/
 
 ### Server (.env)
 ```env
-MONGO_URI=mongodb://localhost:27017/chat-app
-JWT_SECRET=your-secret-key-here
-JWT_EXPIRES_IN=7d
-CORS_ORIGINS=http://localhost:3000,http://localhost:19006
-PORT=4000
-NODE_ENV=development
-```
+# Chat App (monorepo)
 
-### Mobile (.env)
-```env
-EXPO_PUBLIC_API_URL=http://localhost:4000
-EXPO_PUBLIC_SOCKET_URL=http://localhost:4000
-```
+This repository contains a real-time chat application with separate frontend and backend projects.
 
-## Sample Users
+- frontend/ — React web client (converted from Expo → Create React App)
+- backend/  — Node.js + Express API server (Mongoose + Socket.IO)
 
-These demo accounts are pre-seeded by `npm run seed` (server):
+This README covers running both projects locally, the development convenience script, build/deploy notes, and common troubleshooting steps.
 
-- Alice — email: `alice@example.com`, password: `password123`
-- Bob — email: `bob@example.com`, password: `password123`
-- Charlie — email: `charlie@example.com`, password: `password123`
+## Quick start (recommended)
 
-Tips:
-- Expo Web: open `http://localhost:19006` and ensure API is `http://localhost:4000`.
-- Android Emulator: set API to `http://10.0.2.2:4000`.
-- Real device on LAN: set API to your Mac’s IP, e.g. `http://192.168.1.x:4000`.
+From the repository root you can start backend and frontend together:
+# Chat App (monorepo)
 
-## Installation & Setup
+This repository contains a real-time chat application with separate frontend and backend projects.
 
-### 1. Clone the repository
+The mobile/ folder is kept for history only; the active web client is in `frontend/` (Create React App).
+
+## Quick start (recommended)
+
+From the repository root you can start backend and frontend together:
+
 ```bash
-git clone <repository-url>
-cd Chat-App
-```
-
-### 2. Install server dependencies
-```bash
-cd server
-npm install
-```
-
-### 3. Install mobile dependencies
-```bash
-cd ../mobile
-npm install
-```
-
-### 4. Set up environment variables
-Create `.env` files in both `server/` and `mobile/` directories with the values shown above.
-
-### 5. Start the server
-```bash
-cd ../server
+# from repo root
 npm run dev
 ```
 
-The server will start on `http://localhost:4000`
+This runs both services in parallel:
+- Backend: `backend` runs with `nodemon` (default port 4000)
+- Frontend: `frontend` runs with `react-scripts start` (default port 3000)
 
-### 6. Start the mobile app
+Open the frontend in the browser: http://localhost:3000
+
+## Project layout
+
+```
+Chat App/
+├── backend/            # Express API + Socket.IO + Mongoose
+│   ├── src/
+│   ├── scripts/
+# Chat App (monorepo)
+
+A concise guide for running and deploying the Chat App web project.
+
+Contents
+- `frontend/` — React web client (Create React App)
+- `backend/` — Express API server (Mongoose + Socket.IO)
+
+Quick start
+-----------
+Start both services from the repository root:
+
 ```bash
-cd ../mobile
-npm start
+# from repo root
+npm run dev
 ```
 
-This will open the Expo development server. You can then:
-- Press `i` to open iOS Simulator
-- Press `a` to open Android Emulator
-- Scan the QR code with Expo Go app on your phone
+This runs the backend (nodemon) and the frontend (`react-scripts start`) in parallel.
 
-## API Endpoints
+Project layout
+--------------
 
-### Authentication
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User login
-
-### Users
-- `GET /users` - Get all users (requires authentication)
-
-### Conversations
-- `GET /conversations/:userId/messages` - Get conversation messages (requires authentication)
-
-## Socket.IO Events
-
-### Client to Server
-- `message:send` - Send a message
-- `typing:start` - Start typing indicator
-- `typing:stop` - Stop typing indicator
-- `message:read` - Mark messages as read
-
-### Server to Client
-- `message:new` - New message received
-- `typing:start` - User started typing
-- `typing:stop` - User stopped typing
-- `message:read` - Message read confirmation
-- `user:status` - User online/offline status
-
-## Development
-
-### Code Quality
-- TypeScript for type safety
-- ESLint for code linting
-- Prettier for code formatting
-
-### Testing
-```bash
-# Server tests
-cd server
-npm test
-
-# Mobile tests
-cd mobile
-npm test
+```
+Chat App/
+├── backend/   # API server
+├── frontend/  # React web client
+├── mobile/    # legacy / kept for history (not required for web)
+└── package.json (root scripts)
 ```
 
-## Deployment
+Environment
+-----------
 
-### Server
-The server includes a `Dockerfile` and `render.yaml` for easy deployment to Render.com or other platforms.
+Backend: create `backend/.env` with:
 
-### Mobile
-The mobile app can be built and deployed using Expo's build services:
-```bash
-cd mobile
-eas build --platform ios
-eas build --platform android
+```properties
+PORT=4000
+NODE_ENV=development
+MONGO_URI=<your-mongodb-connection-string>
+JWT_SECRET=<your-jwt-secret>
+CORS_ORIGINS=http://localhost:3000
 ```
 
-## Troubleshooting
+Frontend: CRA reads build-time env variables prefixed with `REACT_APP_`. Example:
 
-### Common Issues
+```
+REACT_APP_API_URL=http://localhost:4000
+```
 
-1. **Socket connection errors**: Ensure the server is running and the API URL is correct
-2. **Authentication errors**: Check JWT_SECRET is set correctly
-3. **Database connection errors**: Verify MongoDB is running and MONGO_URI is correct
-4. **Mobile build errors**: Ensure all dependencies are installed and Expo CLI is up to date
+Install
+-------
 
-### Debug Mode
-Enable debug logging by setting `NODE_ENV=development` in your server environment variables.
+Install dependencies at repo root and/or per package:
 
-## Contributing
+```bash
+npm install
+cd frontend && npm install
+cd ../backend && npm install
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+Commands
+--------
 
-## License
+- `npm run dev` (root) — start backend + frontend in parallel
+- `cd backend && npm run dev` — start backend only (nodemon)
+- `cd frontend && npm start` — start frontend only (CRA dev server)
+- `cd frontend && npm run build` — create production build (`frontend/build`)
 
-This project is licensed under the MIT License.
+Deploy (Netlify)
+----------------
 
-## Support
+- Base directory: `frontend`
+- Build command: `npm run build`
+- Publish directory: `frontend/build`
+- Set `REACT_APP_API_URL` in Netlify environment variables to your backend URL
+- Configure SPA redirect (if required) by adding `_redirects` in `frontend/public` with:
 
-For support, please open an issue in the GitHub repository or contact the development team.
+```
+/*  /index.html  200
+```
+
+Notes & troubleshooting
+-----------------------
+
+- DB connection errors: verify `MONGO_URI` and your Atlas IP whitelist.
+- `react-refresh/runtime` dev error: if CRA complains about imports outside `src`, it's a hoisting/monorepo resolution issue. The production `npm run build` is unaffected. Recommended fixes:
+    - install `react-refresh` inside `frontend` (avoid hoisting), or
+    - make `frontend` an independent project root.
+- Ports: frontend uses 3000, backend uses 4000 by default.
+
+Contributing
+------------
+
+- Use feature branches and open pull requests against `main`.
+
+License
+-------
+
+MIT
+
+---

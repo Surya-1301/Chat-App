@@ -40,13 +40,13 @@ app.post('/auth/login', async (req, res) => {
     }
 
     // Check if the password matches
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     // Return token and user object
     res.json({ token, user });
@@ -67,18 +67,18 @@ app.post('/auth/register', async (req, res) => {
       return res.status(400).json({ message: 'Email already in use' });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create and save the user
-    const user = new User({ name, email, password: hashedPassword });
-    await user.save();
+  // Create and save the user
+  const user = new User({ name, email, passwordHash: hashedPassword });
+  await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  // Generate JWT token
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    // Return token and user object
-    res.json({ token, user });
+  // Return token and user object
+  res.json({ token, user });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ message: 'Internal server error' });

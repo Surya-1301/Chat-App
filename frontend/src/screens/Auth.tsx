@@ -1,10 +1,8 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet } from '../web-shims/react-native-web';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
-import PrimaryButton from '../components/PrimaryButton';
 import { storage } from '../utils/storage';
 import { NavigationProps } from '../types';
-import { theme } from '../theme';
+import '../screens/auth.css';
 
 export default function Auth({ navigation }: NavigationProps) {
   const { login, register } = useContext(AuthContext);
@@ -13,11 +11,20 @@ export default function Auth({ navigation }: NavigationProps) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function submit() {
-    console.log('Auth.submit called', { isLogin, email, password, name }); // <--- debug: verifies button click
+  useEffect(() => {
+    const c = document.querySelector('.container');
+    if (!c) return;
+    if (!isLogin) c.classList.add('active'); else c.classList.remove('active');
+  }, [isLogin]);
+
+  async function submit(e?: any) {
+    e && e.preventDefault();
+    setError(null);
     if (!email || !password || (!isLogin && !name)) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      setError('Please fill in all required fields');
       return;
     }
 
@@ -25,119 +32,96 @@ export default function Auth({ navigation }: NavigationProps) {
     try {
       if (isLogin) {
         const result = await login(email, password);
-        console.log('login result', result); // <--- debug: shows backend response
         const token = result?.token ?? null;
-        if (!token) {
-          Alert.alert('Login failed', 'Server did not return a token.');
-          return;
-        }
+        if (!token) throw new Error('Server did not return a token');
         await storage.setToken(token);
         if (result.user) await storage.setUser(result.user);
         navigation.replace('Users', { token, user: result.user });
       } else {
         const result = await register({ name, email, password });
-        console.log('register result', result); // <--- debug
         const token = result?.token ?? null;
-        if (!token) {
-          Alert.alert('Register failed', 'Server did not return a token.');
-          return;
-        }
+        if (!token) throw new Error('Server did not return a token');
         await storage.setToken(token);
         if (result.user) await storage.setUser(result.user);
         navigation.replace('Users', { token, user: result.user });
       }
     } catch (e: any) {
-      console.error('[Auth] submit error', e);
       const msg = e?.response?.data?.message ?? e?.message ?? 'An error occurred';
-      Alert.alert('Error', msg);
+      setError(msg);
+      console.error('[Auth] submit error', e);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{isLogin ? 'Login' : 'Register'}</Text>
+    <div className="auth-outer">
+      <div className="container">
+        <form className={`form-box ${isLogin ? 'Login' : 'Register'}`} onSubmit={submit}>
+          <h2>{isLogin ? 'Login' : 'Register'}</h2>
 
-      {!isLogin && (
-        <TextInput
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-          autoCapitalize="words"
-          autoComplete="name"
-          textContentType="name"
-          nativeID="name"                     // added: maps to id on web
-          accessibilityLabel="Name"
-        />
-      )}
+          {!isLogin && (
+            <div className="input-box">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <label>Username</label>
+            </div>
+          )}
 
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        textContentType="emailAddress"
-        nativeID="email"                    // added: maps to id on web
-        accessibilityLabel="Email"
-        style={styles.input}
-      />
+          <div className="input-box">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <label>Email</label>
+          </div>
 
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        secureTextEntry
-        autoComplete="current-password"
-        textContentType="password"
-        nativeID="password"                 // added: maps to id on web
-        accessibilityLabel="Password"
-        style={styles.input}
-      />
+          <div className="input-box">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <label>Password</label>
+            <button
+              type="button"
+              className="btn-show"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
 
-      <PrimaryButton
-        title={loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
-        onPress={submit}
-        disabled={loading}
-        loading={loading}
-        style={{ marginTop: theme.spacing(1) }}
-      />
+          {error && <div className="error-message">{error}</div>}
 
-      <Text
-        style={styles.switchText}
-        onPress={() => setIsLogin(!isLogin)}
-      >
-        {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
-      </Text>
-    </View>
+          <button className="btn" type="submit">
+            {loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
+          </button>
+
+          <div className="toggle-link">
+            <p>
+              {isLogin ? (
+                <>
+                  Don't have an account?{' '}
+                  <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }}>Sign Up</a>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }}>Sign In</a>
+                </>
+              )}
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  switchText: {
-    textAlign: 'center',
-    color: '#007BFF',
-    marginTop: 16,
-  },
-});

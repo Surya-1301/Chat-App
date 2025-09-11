@@ -43,6 +43,7 @@ function validateName(name) {
 
 async function register(req, res) {
 	try {
+		console.log('Incoming request data:', req.body);
 		const { name, email, password } = req.body;
 
 		// Check for missing fields
@@ -112,8 +113,12 @@ async function register(req, res) {
 
 	} catch (err) {
 		console.error('Registration error:', err);
+		if (err.name === 'ValidationError') {
+			return res.status(400).json({ message: 'Validation error', details: err.errors });
+		}
 		return res.status(500).json({ 
-			message: 'Failed to create account. Please try again.' 
+			message: 'Failed to create account. Please try again.',
+			details: err.message 
 		});
 	}
 }

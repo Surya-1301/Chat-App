@@ -4,21 +4,33 @@ const mongoose = require('mongoose');
 
 async function listLastMessages(req, res) {
 	try {
-		const myId = req.userId.toString();
+		const myId = req.userId?.toString();
+		if (!myId) {
+			return res.status(400).json({ message: 'User ID is missing or invalid' });
+		}
+
 		const conversations = await Conversation.find({ participants: myId })
 			.select('participants lastMessage')
 			.lean();
 
+		if (!conversations || conversations.length === 0) {
+			return res.status(404).json({ message: 'No conversations found' });
+		}
+
 		const items = conversations.map((c) => {
 			const otherId = c.participants.find((p) => p.toString() !== myId);
+			if (!otherId) {
+				console.error('Other participant ID is missing in conversation:', c);
+			}
 			return {
-				otherUserId: otherId,
+				otherUserId: otherId || null,
 				lastMessage: c.lastMessage || null,
 			};
 		});
 
 		return res.json({ items });
 	} catch (err) {
+		console.error('Error in listLastMessages:', err);
 		return res.status(500).json({ message: 'Server error' });
 	}
 }

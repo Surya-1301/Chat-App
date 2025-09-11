@@ -21,9 +21,14 @@ function getUserIdFromHeader(req) {
 router.get('/', async (req, res) => {
   try {
     const currentId = getUserIdFromHeader(req);
-    const users = await User.find({}, { passwordHash: 0, password: 0 }).lean();
-    const filtered = users.map(u => ({ id: String(u._id), name: u.name, email: u.email }))
-                          .filter(u => currentId ? u.id !== String(currentId) : true);
+    const q = (req.query.q || '').toString().trim().toLowerCase();
+    const search = q
+      ? { $or: [ { name: new RegExp(q, 'i') }, { email: new RegExp(q, 'i') }, { username: new RegExp(q, 'i') } ] }
+      : {};
+    const users = await User.find(search, { passwordHash: 0 }).lean();
+    const filtered = users
+      .filter(u => currentId ? String(u._id) !== String(currentId) : true)
+      .map(u => ({ _id: String(u._id), name: u.name, email: u.email, username: u.username, isOnline: !!u.isOnline, lastSeen: u.lastSeen }));
     return res.json({ users: filtered });
   } catch (err) {
     console.error('GET /users error', err);
