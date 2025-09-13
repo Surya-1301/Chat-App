@@ -8,6 +8,10 @@ const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
 export const storage = {
+  getItem: webStorage.getItem,
+  setItem: webStorage.setItem,
+  removeItem: webStorage.removeItem,
+
   setToken: async (t: string) => webStorage.setItem(TOKEN_KEY, t),
   getToken: async () => webStorage.getItem(TOKEN_KEY),
   removeToken: async () => webStorage.removeItem(TOKEN_KEY),

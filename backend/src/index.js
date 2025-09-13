@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 let corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 // In development, ensure local frontend dev server is allowed
 if (process.env.NODE_ENV === 'development') {
-  if (!corsOrigins.includes('http://localhost:3000')) corsOrigins.push('http://localhost:3000');
+  if (!corsOrigins.includes('http://3001-firebase-chat-app-1757790255651.cluster-isls3qj2gbd5qs4jkjqvhanhfv6.cloudworkstations.dev')) corsOrigins.push('http://3001-firebase-chat-app-1757790255651.cluster-isls3qj2gbd5qs4jkjqvhanhfv6.cloudworkstations.dev');
 }
 if (corsOrigins.length === 0) corsOrigins = ['*'];
 app.use(cors({ origin: corsOrigins, credentials: true }));

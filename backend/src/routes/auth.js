@@ -34,7 +34,8 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password required' });
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already in use' });
-  const passwordHash = await bcrypt.hash(password, 10);
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(password, salt);
   // generate a simple username from name (slug) and ensure uniqueness
   const base = (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0,20) || 'user';
   let username = base;
