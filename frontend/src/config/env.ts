@@ -1,10 +1,4 @@
 export const config = {
-  API_URL:
-    process.env.REACT_APP_API_URL ||
-    process.env.EXPO_PUBLIC_API_URL ||
-    'http://localhost:4000',
-  SOCKET_URL:
-    process.env.REACT_APP_SOCKET_URL ||
-    process.env.EXPO_PUBLIC_SOCKET_URL ||
-    'http://localhost:4000',
+  API_URL: 'https://chat-app-flax-zeta.vercel.app/api',
+  SOCKET_URL: 'https://chat-app-flax-zeta.vercel.app/api',
 };
