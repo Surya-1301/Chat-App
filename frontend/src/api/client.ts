@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Prefer CRA env var, fall back to Expo-style for backwards compatibility.
-const BASE = (process.env.REACT_APP_API_URL as string) || (process.env.EXPO_PUBLIC_API_URL as string) || 'http://localhost:4000';
+const BASE = 'https://chat-app-flax-zeta.vercel.app/api';
 export const client = axios.create({
   baseURL: BASE,
   timeout: 15000,
