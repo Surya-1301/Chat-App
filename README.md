@@ -2,6 +2,12 @@
 
 A real-time chat application built with React App.
 
+<p align="center">
+  <a href="https://1chat-app.netlify.app/">
+    <img src="https://img.shields.io/badge/View Demo-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"/>
+  </a>
+</p>
+
 ## Features
 
 - 🔐 User authentication (login/register)
